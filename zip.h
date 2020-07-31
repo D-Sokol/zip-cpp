@@ -12,6 +12,9 @@ public:
     value_type operator*();
 
     bool operator==(const ZipIterator& other) const;
+    inline bool operator!=(const ZipIterator& other) const {
+        return !operator==(other);
+    }
 
     inline const Base& AsTuple() const { return *this; }
 private:
