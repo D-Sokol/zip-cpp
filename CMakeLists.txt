@@ -8,13 +8,13 @@ set(ZIP_SOURCES
 )
 
 set(TEST_SOURCES
-    main.cpp
+    main.cpp test_iterator.cpp test_zip.cpp
 )
 
 add_library(zip ${ZIP_SOURCES})
 set_target_properties(zip PROPERTIES LINKER_LANGUAGE CXX)
 
-add_executable(test main.cpp)
+add_executable(test ${TEST_SOURCES})
 
 target_link_libraries(test zip gtest gtest_main)
 
