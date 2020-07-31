@@ -97,3 +97,8 @@ TEST(Iterator, EqualOperatorForNonReferenceable) {
         }
     }
 }
+
+TEST(Iterator, EqualOperatorForEmptyZip) {
+    ZipIterator<> zi1, zi2;
+    ASSERT_EQ(zi1, zi2) << "All ZipIterators<> should be equal to each other";
+}
