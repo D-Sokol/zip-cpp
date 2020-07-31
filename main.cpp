@@ -1,6 +1,12 @@
-#include <iostream>
+#include "gtest/gtest.h"
 
-int main() {
-    std::cout << "OK" << std::endl;
-    return 0;
+using namespace std;
+
+TEST(Demo, FirstTest) {
+    ASSERT_TRUE(true);
+}
+
+int main(int argc, char** argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

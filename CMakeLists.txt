@@ -16,4 +16,9 @@ set_target_properties(zip PROPERTIES LINKER_LANGUAGE CXX)
 
 add_executable(test main.cpp)
 
-target_link_libraries(test zip)
+target_link_libraries(test zip gtest gtest_main)
+
+target_include_directories(test PRIVATE
+        "extern/googletest/googletest/include")
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
