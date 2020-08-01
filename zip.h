@@ -29,13 +29,16 @@ private:
     template <size_t Index>
     inline typename std::enable_if<Index == sizeof...(Iters), void>::type IncrementIndex() {}
 
-    // TODO: add comments about all dark magic used here
     template <size_t... Indexes>
     inline typename std::enable_if<sizeof...(Indexes) != 0, bool>::type AnyEquals(const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
         return (... || (std::get<Indexes>(*this) == std::get<Indexes>(other)));
     }
 
-    // TODO: consider if it is possible to safely remove this function and enable_if from the return value of the previous one.
+    // Так как вызов функции zip() без аргументов должен возвращать пустой диапазон,
+    //  то в случае, когда список типов Types пуст, все итераторы должны считаться равными между собой.
+    // Поскольку при использовании fold expression для оператора || на пустом списке
+    //  возвращает false (https://en.cppreference.com/w/cpp/language/fold), необходима отдельная функция.
+    // TODO: возможно ли использовать одну функцию и constexpr?
     template <size_t... Indexes>
     inline typename std::enable_if<sizeof...(Indexes) == 0, bool>::type AnyEquals(const ZipIterator&, std::integer_sequence<size_t, Indexes...>) const {
         return true;
@@ -57,7 +60,24 @@ template<typename... Types>
 bool ZipIterator<Types...>::operator==(const ZipIterator& other) const {
     if (this == &other)
         return true;
-    // TODO: write some comments about why AnyEquals is used here, not AllEquals or something.
+    // Поскольку при сравнении итераторов, полученных из разных контейнеров,
+    //  поведение программы не определено,то при сравнении двух ZipIterator рассматривается только случай,
+    //  когда оба итератора z1, z2 были получены при помощи корректного вызова класса Zip.
+    // В таком случае возможны следующие сценарии:
+    // 1. Сравниваются два итератора, изначально полученные при помощи метода Zip::begin, и, возможно,
+    //    несколько раз инкрементированные. Если количество инкрементов у z1 и z2 одинаково,
+    //    то все хранимые итераторы на контейнеры совпадают, иначе все хранимые итераторы на контейнера различны.
+    // 2. Сравниваются два итератора, полученные при помощи Zip::end.
+    //    В этом случае все итераторы, хранящиеся в z1 и z2 получены при помощи вызова функции end от контейнера,
+    //    поэтому все хранимые итераторы равны.
+    // 3. Один из итераторов получен при помощи Zip::begin и, возможно, несколько раз инкрементирован,
+    //    другой получен при помощи метода Zip:end.
+    //    Так как итерация по возвращаемому значению zip должна завершиться,
+    //    как только хотя бы один из хранимых итераторов достигает конца диапазона,
+    //    то в этом случае ZipIterator должны считаться равными тогда и только тогда,
+    //    когда хотя бы один из хранимых итераторов в z1 равен соответствующему хранимому итератору z2.
+    // В любом из рассматриваемых случаев достаточно проверить, выполнено ли равенство хранимых итераторов
+    //  хотя бы для одной пары.
     return AnyEquals(other, std::index_sequence_for<Types...>{});
 }
 

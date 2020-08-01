@@ -45,57 +45,31 @@ TEST(Iterator, EqualOperatorForReferenceable) {
         EXPECT_EQ(z2, z1);
     }
     {
-        ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
-        ZI z2(a.begin() + 2, s.begin() + 1, c.begin());
-        EXPECT_NE(z1, z2);
-        EXPECT_NE(z2, z1);
-    }
-    {
-        ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
-        ZI z2(a.begin() + 1, s.begin() + 1, c.begin() + 1);
-        EXPECT_NE(z1, z2);
-        EXPECT_NE(z2, z1);
-    }
-    {
-        ZI z1(a.begin() + 2, s.begin()    , c.begin() + 1);
-        ZI z2(a.begin() + 2, s.begin() + 1, c.begin() + 1);
-        EXPECT_NE(z1, z2);
-        EXPECT_NE(z2, z1);
-    }
-    {
-        ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
+        ZI z1(a.begin() + 1, s.begin() + 1, c.begin() + 1);
         ZI z2(a.begin(), s.begin(), c.begin());
         EXPECT_NE(z1, z2);
     }
 }
 
-TEST(Iterator, EqualOperatorForNonReferenceable) {
+TEST(Iterator, EqualOperatorAfterIncrement) {
     vector<int> a = {10, 20, 30};
     string s = "abcd";
     const array<bool, 2> c = {false, true};
     using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
 
-    vector<ZI> iters;
-    iters.reserve(8);
-    for (auto ai : {a.begin(), a.end()})
-        for (auto si : {s.begin(), s.end()})
-            for (auto ci : {c.begin(), c.end()})
-                iters.emplace_back(ai, si, ci);
-
-    for (size_t i = 0; i < iters.size(); ++i) {
-        for (size_t j = i; j < iters.size(); ++j) {
-            if (i == 0) {
-                if (j == 0) {
-                    // In fact, this was already tested.
-                    ASSERT_EQ(iters[i], iters[j]);
-                } else {
-                    EXPECT_NE(iters[i], iters[j]) << "Referenceable and nonreferenceable iterators should not be equal";
-                }
-            } else {
-                EXPECT_EQ(iters[i], iters[j]) << "Iterators containing at least one end should be equal";
-            }
+    ZI first(a.begin(), s.begin(), c.begin());
+    ZI last(a.end(), s.end(), c.end());
+    for (size_t first_increments = 0; first_increments < 2; ++first_increments, ++first) {
+        ZI second(a.begin(), s.begin(), c.begin());
+        for (size_t second_increments = 0; second_increments < 2; ++second_increments, ++second) {
+            if (first_increments == second_increments)
+                ASSERT_EQ(first, second) << "ZipIterators should be equal after " << first_increments << " increments";
+            else
+                ASSERT_NE(first, second) << "ZipIterators should not be equal after" << first_increments << " and " << second_increments << " increments";
         }
+        EXPECT_NE(first, last) << "ZipIterator should not reach end after " << first_increments << " increments";
     }
+    EXPECT_EQ(first, last) << "ZipIterator should reach end after 2 increments";
 }
 
 TEST(Iterator, EqualOperatorForEmptyZip) {
