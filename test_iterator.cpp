@@ -137,3 +137,20 @@ TEST(Iterator, ReferenceReadAfterIncrement) {
         ASSERT_EQ(cv, true);
     }
 }
+
+TEST(Iterator, Assignment) {
+    vector<int> a = {10, 20, 30};
+    string s = "abcd";
+    const array<bool, 2> c = {false, true};
+    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
+    {
+        ZI z1(a.begin(), s.begin(), c.begin());
+        const auto& [av, sv, cv] = *z1; // FIXME: к чему здесь вообще относится const?
+        av += 5;
+        sv = 'A';
+        ASSERT_EQ(av, 15);
+        ASSERT_EQ(sv, 'A');
+        ASSERT_EQ(a.front(), 15);
+        ASSERT_EQ(s.front(), 'A');
+    }
+}
