@@ -7,10 +7,11 @@ class ZipIterator : private std::tuple<Iters...> {
     using Base = std::tuple<Iters...>;
 public:
     using Base::Base;
-    using value_type = std::tuple<typename std::iterator_traits<Iters>::value_type...>;
+    using value_type = std::tuple<typename std::iterator_traits<Iters>::reference...>;
 
     ZipIterator& operator++();
     value_type operator*();
+    const value_type operator*() const;
 
     bool operator==(const ZipIterator& other) const;
     inline bool operator!=(const ZipIterator& other) const {
@@ -43,6 +44,16 @@ private:
     inline typename std::enable_if<sizeof...(Indexes) == 0, bool>::type AnyEquals(const ZipIterator&, std::integer_sequence<size_t, Indexes...>) const {
         return true;
     }
+
+    template <size_t... Indexes>
+    inline value_type CombineValues(std::integer_sequence<size_t, Indexes...>) {
+        return std::forward_as_tuple(*std::get<Indexes>(*this)...);
+    }
+
+    template <size_t... Indexes>
+    inline value_type CombineValues(std::integer_sequence<size_t, Indexes...>) const {
+        return std::forward_as_tuple(*std::get<Indexes>(*this)...);
+    }
 };
 
 template<typename... Types>
@@ -53,7 +64,12 @@ ZipIterator<Types...>& ZipIterator<Types...>::operator++() {
 
 template<typename... Types>
 typename ZipIterator<Types...>::value_type ZipIterator<Types...>::operator*() {
-    return ZipIterator::value_type();
+    return CombineValues(std::index_sequence_for<Types...>{});
+}
+
+template<typename... Types>
+const typename ZipIterator<Types...>::value_type ZipIterator<Types...>::operator*() const {
+    return CombineValues(std::index_sequence_for<Types...>{});
 }
 
 template<typename... Types>

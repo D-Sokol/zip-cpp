@@ -76,3 +76,64 @@ TEST(Iterator, EqualOperatorForEmptyZip) {
     ZipIterator<> zi1, zi2;
     ASSERT_EQ(zi1, zi2) << "All ZipIterators<> should be equal to each other";
 }
+
+TEST(Iterator, ReferenceReadValue) {
+    vector<int> a = {10, 20, 30};
+    string s = "abcd";
+    const array<bool, 2> c = {false, true};
+    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
+
+    {
+        ZI z1(a.begin(), s.begin(), c.begin());
+        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        {
+            auto[av, sv, cv] = *z1;
+            ASSERT_EQ(av, 10);
+            ASSERT_EQ(sv, 'a');
+            ASSERT_EQ(cv, false);
+        }
+        {
+            auto tup = *z1;
+            ASSERT_EQ(tup, make_tuple(10, 'a', false));
+        }
+    }
+    {
+        ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
+        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        auto[av, sv, cv] = *z1;
+        ASSERT_EQ(av, 30);
+        ASSERT_EQ(sv, 'b');
+        ASSERT_EQ(cv, true);
+    }
+}
+
+TEST(Iterator, ReferenceReadConstIterator) {
+    vector<int> a = {10, 20, 30};
+    string s = "abcd";
+    const array<bool, 2> c = {false, true};
+    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
+
+    {
+        const ZI z1(a.begin(), s.begin(), c.begin());
+        static_assert(is_same_v<decltype(*z1), const tuple<int&, char&, const bool&>>);
+        auto[av, sv, cv] = *z1;
+        ASSERT_EQ(av, 10);
+        ASSERT_EQ(sv, 'a');
+        ASSERT_EQ(cv, false);
+    }
+}
+
+TEST(Iterator, ReferenceReadAfterIncrement) {
+    vector<int> a = {10, 20, 30};
+    string s = "abcd";
+    const array<bool, 2> c = {false, true};
+    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
+    {
+        ZI z1(a.begin(), s.begin(), c.begin());
+        ++z1;
+        auto[av, sv, cv] = *z1;
+        ASSERT_EQ(av, 20);
+        ASSERT_EQ(sv, 'b');
+        ASSERT_EQ(cv, true);
+    }
+}
