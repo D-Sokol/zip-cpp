@@ -7,11 +7,14 @@ class ZipIterator : private std::tuple<Iters...> {
     using Base = std::tuple<Iters...>;
 public:
     using Base::Base;
+    // Something like tuple<int&, int&>. Used as return value of non-constant version of operator*.
     using value_type = std::tuple<typename std::iterator_traits<Iters>::reference...>;
+    // Something like tuple<const int&, const int&>. Used as return value of constant version of operator*.
+    using const_value_type = std::tuple<typename std::add_lvalue_reference_t<const typename std::iterator_traits<Iters>::value_type>...>;
 
     ZipIterator& operator++();
     value_type operator*();
-    const value_type operator*() const;
+    const_value_type operator*() const;
 
     bool operator==(const ZipIterator& other) const;
     inline bool operator!=(const ZipIterator& other) const {
@@ -51,7 +54,7 @@ private:
     }
 
     template <size_t... Indexes>
-    inline value_type CombineValues(std::integer_sequence<size_t, Indexes...>) const {
+    inline const_value_type CombineValues(std::integer_sequence<size_t, Indexes...>) const {
         return std::forward_as_tuple(*std::get<Indexes>(*this)...);
     }
 };
@@ -68,7 +71,7 @@ typename ZipIterator<Types...>::value_type ZipIterator<Types...>::operator*() {
 }
 
 template<typename... Types>
-const typename ZipIterator<Types...>::value_type ZipIterator<Types...>::operator*() const {
+typename ZipIterator<Types...>::const_value_type ZipIterator<Types...>::operator*() const {
     return CombineValues(std::index_sequence_for<Types...>{});
 }
 

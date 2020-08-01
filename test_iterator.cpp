@@ -115,7 +115,7 @@ TEST(Iterator, ReferenceReadConstIterator) {
 
     {
         const ZI z1(a.begin(), s.begin(), c.begin());
-        static_assert(is_same_v<decltype(*z1), const tuple<int&, char&, const bool&>>);
+        static_assert(is_same_v<decltype(*z1), tuple<const int&, const char&, const bool&>>);
         auto[av, sv, cv] = *z1;
         ASSERT_EQ(av, 10);
         ASSERT_EQ(sv, 'a');
