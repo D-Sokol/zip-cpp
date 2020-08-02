@@ -8,7 +8,7 @@ set(ZIP_SOURCES
 )
 
 set(TEST_SOURCES
-    main.cpp test_iterator.cpp test_zip.cpp
+    main.cpp test_iterator.cpp test_zip.cpp test_iteration.cpp
 )
 
 add_library(zip ${ZIP_SOURCES})
