@@ -103,7 +103,14 @@ bool ZipIterator<Types...>::operator==(const ZipIterator& other) const {
 template <typename... Types>
 class Zip {
 public:
+    using iterator = ZipIterator<decltype(std::begin(std::declval<Types>()))...>;
+
     explicit Zip(Types&& ... args);
+    inline iterator& begin() { return begin_; }
+    inline iterator& end() { return end_; }
+private:
+    iterator begin_;
+    iterator end_;
 };
 
 template<typename... Types>
@@ -112,6 +119,8 @@ Zip<Types...> zip(Types&& ... args) {
 }
 
 template<typename... Types>
-Zip<Types...>::Zip(Types&& ... args) {
-    // TODO: store iterators
+Zip<Types...>::Zip(Types&& ... args)
+  : begin_(std::begin(args)...)
+  , end_(std::end(args)...)
+{
 }
