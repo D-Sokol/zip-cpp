@@ -2,15 +2,36 @@
 #include <tuple>
 #include <utility>
 
+template <typename...>
+class ZipIterator;
+
+template <typename Iterator>
+struct value_helper {
+    using value = typename std::iterator_traits<Iterator>::reference;
+    using const_value = const typename std::iterator_traits<Iterator>::value_type&;
+};
+
+template <typename... Iterators>
+struct value_helper<ZipIterator<Iterators...>> {
+    using value = typename ZipIterator<Iterators...>::value_type;
+    using const_value = typename ZipIterator<Iterators...>::const_value_type;
+};
+
+
 template <typename... Iters>
 class ZipIterator : private std::tuple<Iters...> {
     using Base = std::tuple<Iters...>;
 public:
     using Base::Base;
+    using iterator_category = std::input_iterator_tag; // TODO: conditional
     // Something like tuple<int&, int&>. Used as return value of non-constant version of operator*.
-    using value_type = std::tuple<typename std::iterator_traits<Iters>::reference...>;
+    using value_type = std::tuple<typename value_helper<Iters>::value...>;
+    using difference_type = int;
+    using pointer = value_type*;
+    using reference = value_type&;
+
     // Something like tuple<const int&, const int&>. Used as return value of constant version of operator*.
-    using const_value_type = std::tuple<typename std::add_lvalue_reference_t<const typename std::iterator_traits<Iters>::value_type>...>;
+    using const_value_type = std::tuple<typename value_helper<Iters>::const_value...>;
 
     ZipIterator& operator++();
     value_type operator*();
@@ -103,7 +124,7 @@ bool ZipIterator<Types...>::operator==(const ZipIterator& other) const {
 template <typename... Types>
 class Zip {
 public:
-    using iterator = ZipIterator<decltype(std::begin(std::declval<Types>()))...>;
+    using iterator = ZipIterator<std::remove_reference_t<decltype(std::begin(std::declval<Types>()))>...>;
 
     explicit Zip(Types&& ... args);
     inline iterator& begin() { return begin_; }

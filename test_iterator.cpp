@@ -1,4 +1,5 @@
 #include <string>
+#include <type_traits>
 #include <vector>
 #include "gtest/gtest.h"
 #include "zip.h"
@@ -14,6 +15,29 @@ TEST(Iterator, Constructable) {
 
 TEST(Iterator, DefaultConstructable) {
     auto it = ZipIterator<>();
+}
+
+TEST(Iterator, NestedZipConstructable) {
+    vector<int> a = {10};
+    vector<int> b = {10};
+    vector<int> c = {10};
+    vector<int> d = {10};
+    auto z1 = zip(a, b);
+    auto z2 = zip(c, d);
+
+    using normal_zip_iter = remove_reference_t<decltype(z1.begin())>;
+    using nested_zip_iter = remove_reference_t<decltype(zip(z1, z2).begin())>;
+
+    static_assert(is_same_v<normal_zip_iter::value_type, tuple<int&, int&>>);
+    static_assert( is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&> , tuple<int&, int&> >>);
+    static_assert(!is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&>&, tuple<int&, int&>&>>);
+
+    for (const auto& [tup1, tup2] : zip(z1, z2)) {
+        ASSERT_EQ(get<0>(tup1), 10);
+        ASSERT_EQ(get<1>(tup1), 10);
+        ASSERT_EQ(get<0>(tup2), 10);
+        ASSERT_EQ(get<1>(tup2), 10);
+    }
 }
 
 TEST(Iterator, VectorIncrement) {
