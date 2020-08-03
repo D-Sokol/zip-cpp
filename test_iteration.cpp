@@ -131,7 +131,8 @@ public:
         using reference = int&;
 
         int element;
-        int operator*() const { return element; }
+        int& operator*() { return element; }
+        const int& operator*() const { return element; }
         iterator operator++() { ++element; return *this; }
         bool operator==(const iterator& other) const { return element == other.element; }
         bool operator!=(const iterator& other) const { return !operator==(other); }
@@ -160,4 +161,5 @@ TEST(Iteration, CustomTypes) {
     for (const auto& [word, number] : zip(input, count)) {
         obtained[word] = number;
     }
+    ASSERT_EQ(expected, obtained);
 }
