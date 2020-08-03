@@ -55,18 +55,14 @@ private:
     inline typename std::enable_if<Index == sizeof...(Iters), void>::type IncrementIndex() {}
 
     template <size_t... Indexes>
-    inline typename std::enable_if<sizeof...(Indexes) != 0, bool>::type AnyEquals(const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
-        return (... || (std::get<Indexes>(*this) == std::get<Indexes>(other)));
-    }
-
-    // Так как вызов функции zip() без аргументов должен возвращать пустой диапазон,
-    //  то в случае, когда список типов Types пуст, все итераторы должны считаться равными между собой.
-    // Поскольку при использовании fold expression для оператора || на пустом списке
-    //  возвращает false (https://en.cppreference.com/w/cpp/language/fold), необходима отдельная функция.
-    // TODO: возможно ли использовать одну функцию и constexpr?
-    template <size_t... Indexes>
-    inline typename std::enable_if<sizeof...(Indexes) == 0, bool>::type AnyEquals(const ZipIterator&, std::integer_sequence<size_t, Indexes...>) const {
-        return true;
+    inline bool AnyEquals(const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
+        if constexpr (sizeof...(Indexes) != 0)
+            return (... || (std::get<Indexes>(*this) == std::get<Indexes>(other)));
+        else
+            // Так как вызов функции zip() без аргументов должен возвращать пустой диапазон,
+            //  то в случае, когда список типов Types пуст, все итераторы должны считаться равными между собой.
+            // Предыдущая ветка при пустом списке возвращает false, см. https://en.cppreference.com/w/cpp/language/fold
+            return true;
     }
 
     template <size_t... Indexes>
