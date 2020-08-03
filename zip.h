@@ -44,15 +44,10 @@ public:
 
     inline const Base& AsTuple() const { return *this; }
 private:
-    // TODO: apply here the same trick as below (integer_sequence_for)
-    template <size_t Index>
-    inline typename std::enable_if<Index < sizeof...(Iters), void>::type IncrementIndex() {
-        ++std::get<Index>(*this);
-        IncrementIndex<Index+1>();
+    template <size_t... Indexes>
+    inline void IncrementIndex(std::integer_sequence<size_t, Indexes...>) {
+        ((++std::get<Indexes>(*this)), ...);
     }
-
-    template <size_t Index>
-    inline typename std::enable_if<Index == sizeof...(Iters), void>::type IncrementIndex() {}
 
     template <size_t... Indexes>
     inline bool AnyEquals(const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
@@ -78,7 +73,7 @@ private:
 
 template<typename... Types>
 ZipIterator<Types...>& ZipIterator<Types...>::operator++() {
-    IncrementIndex<0>();
+    IncrementIndex(std::index_sequence_for<Types...>{});
     return *this;
 }
 
