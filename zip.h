@@ -17,13 +17,24 @@ struct value_helper<ZipIterator<Iterators...>> {
     using const_value = typename ZipIterator<Iterators...>::const_value_type;
 };
 
+template <typename... Iters>
+struct category_helper {
+    using type = std::common_type_t<typename std::iterator_traits<Iters>::iterator_category...>;
+};
+
+template <>
+struct category_helper<> {
+    using type = std::input_iterator_tag;
+};
 
 template <typename... Iters>
 class ZipIterator : private std::tuple<Iters...> {
     using Base = std::tuple<Iters...>;
 public:
     using Base::Base;
-    using iterator_category = std::input_iterator_tag; // TODO: conditional
+    using iterator_category = typename category_helper<Iters...>::type;
+    static_assert(std::is_convertible_v<iterator_category, std::input_iterator_tag>);
+
     // Something like tuple<int&, int&>. Used as return value of non-constant version of operator*.
     using value_type = std::tuple<typename value_helper<Iters>::value...>;
     using difference_type = int;

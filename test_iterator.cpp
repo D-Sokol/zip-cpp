@@ -1,3 +1,7 @@
+#include <deque>
+#include <forward_list>
+#include <iterator>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -177,4 +181,36 @@ TEST(Iterator, Assignment) {
         ASSERT_EQ(a.front(), 15);
         ASSERT_EQ(s.front(), 'A');
     }
+}
+
+
+template <typename Category, typename ... Iters>
+using result_category = is_same<Category, typename ZipIterator<Iters...>::iterator_category>;
+
+TEST(IteratorCategories, CheckMemberTypes) {
+    using i_input = istream_iterator<int>;
+    using i_forward = typename std::forward_list<int>::iterator;
+    using i_bidir = typename std::set<int>::iterator;
+    using i_random = typename std::deque<int>::iterator;
+
+    static_assert(result_category<input_iterator_tag>::value);
+
+    static_assert(result_category<input_iterator_tag, i_input>::value);
+    static_assert(result_category<forward_iterator_tag, i_forward>::value);
+    static_assert(result_category<bidirectional_iterator_tag, i_bidir>::value);
+    static_assert(result_category<random_access_iterator_tag, i_random>::value);
+
+    static_assert(result_category<input_iterator_tag, i_input, i_input, i_input>::value);
+    static_assert(result_category<forward_iterator_tag, i_forward, i_forward, i_forward>::value);
+    static_assert(result_category<bidirectional_iterator_tag, i_bidir, i_bidir, i_bidir>::value);
+    static_assert(result_category<random_access_iterator_tag, i_random, i_random, i_random>::value);
+
+    static_assert(result_category<input_iterator_tag, i_input, i_random, i_random>::value);
+    static_assert(result_category<input_iterator_tag, i_random, i_input, i_random>::value);
+    static_assert(result_category<input_iterator_tag, i_random, i_random, i_input>::value);
+
+    static_assert(result_category<forward_iterator_tag, i_random, i_bidir, i_random, i_forward, i_bidir, i_forward, i_random>::value);
+
+    static_assert(result_category<forward_iterator_tag, i_random, ZipIterator<i_bidir, i_random>, ZipIterator<i_forward, i_bidir>>::value);
+    ASSERT_TRUE(true);
 }
