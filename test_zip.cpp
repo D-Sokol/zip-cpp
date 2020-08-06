@@ -4,6 +4,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zip_impl;
 
 TEST(Construct, VectorsInitialization) {
     vector<int> v1 = {1, 2, 3};

@@ -9,6 +9,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zip_impl;
 
 TEST(Iterator, Constructable) {
     vector<int> a = {10, 20};
