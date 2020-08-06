@@ -136,9 +136,9 @@ namespace zip_impl {
 
         explicit Zip(Types&& ... args);
 
-        inline iterator& begin() { return begin_; }
+        inline iterator begin() { return begin_; }
 
-        inline iterator& end() { return end_; }
+        inline iterator end() { return end_; }
 
     private:
         iterator begin_;
