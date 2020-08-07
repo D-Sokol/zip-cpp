@@ -48,6 +48,12 @@ namespace zip_impl {
 
         ZipIterator& operator++();
 
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
+        ZipIterator& operator--() {
+            ApplyToIterators([](auto& x){ --x; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
         value_type operator*();
 
         const_value_type operator*() const;

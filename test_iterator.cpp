@@ -215,3 +215,15 @@ TEST(IteratorCategories, CheckMemberTypes) {
     static_assert(result_category<forward_iterator_tag, i_random, ZipIterator<i_bidir, i_random>, ZipIterator<i_forward, i_bidir>>::value);
     ASSERT_TRUE(true);
 }
+
+TEST(IteratorCategories, BidirectionalDecrement) {
+    std::set<int> a = {10, 40, 20};
+    std::set<int> b = {1, 2, 4};
+    auto z = zip(a, b);
+    auto it1 = z.begin();
+    ++it1;
+    EXPECT_EQ(*it1, make_tuple(20, 2));
+    --it1;
+    ASSERT_EQ(it1, z.begin());
+    ASSERT_EQ(*it1, *z.begin());
+}
