@@ -61,9 +61,9 @@ namespace zip_impl {
         inline const Base& AsTuple() const { return *this; }
 
     private:
-        template<size_t... Indexes>
-        inline void IncrementIndex(std::integer_sequence<size_t, Indexes...>) {
-            ((++std::get<Indexes>(*this)), ...);
+        template<typename F, size_t... Indexes>
+        inline void ApplyToIterators(F&& f, std::integer_sequence<size_t, Indexes...>) {
+            ((f(std::get<Indexes>(*this))), ...);
         }
 
         template<size_t... Indexes>
@@ -90,7 +90,7 @@ namespace zip_impl {
 
     template<typename... Types>
     ZipIterator<Types...>& ZipIterator<Types...>::operator++() {
-        IncrementIndex(std::index_sequence_for<Types...>{});
+        ApplyToIterators([](auto& x){ ++x; }, std::index_sequence_for<Types...>{});
         return *this;
     }
 
