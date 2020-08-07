@@ -1,6 +1,7 @@
 #include <deque>
 #include <forward_list>
 #include <iterator>
+#include <numeric>
 #include <set>
 #include <string>
 #include <type_traits>
@@ -226,4 +227,85 @@ TEST(IteratorCategories, BidirectionalDecrement) {
     --it1;
     ASSERT_EQ(it1, z.begin());
     ASSERT_EQ(*it1, *z.begin());
+}
+
+TEST(IteratorCategories, Arithmetics) {
+    vector<int> a(10);
+    iota(a.begin(), a.end(), 0);
+    EXPECT_EQ(a.back(), 9);
+
+    auto z = zip(a);
+
+    for (int i = 0; i < 10; ++i) {
+        auto it1 = begin(z);
+        auto it2 = it1 + i;
+        it1 += i;
+        EXPECT_EQ(it1, it2);
+        ASSERT_EQ(get<0>(*it1), i) << "Error in operator +=";
+        ASSERT_EQ(get<0>(*it2), i) << "Error in operator +";
+    }
+    for (int i = 1; i < 11; ++i) {
+        auto it1 = end(z);
+        auto it2 = it1 - i;
+        it1 -= i;
+        EXPECT_EQ(it1, it2);
+        ASSERT_EQ(get<0>(*it1), 10-i) << "Error in operator -=";
+        ASSERT_EQ(get<0>(*it2), 10-i) << "Error in operator -";
+    }
+}
+
+TEST(IteratorCategories, Differences) {
+    vector<int> a(10);
+    auto z = zip(a);
+    for (int i = 0; i < 10; ++i) {
+        auto it1 = z.begin() + i;
+        for (int j = 0; j < 10; ++j) {
+            auto it2 = z.begin() + j;
+            ASSERT_EQ(it2 - it1, j - i);
+        }
+    }
+}
+
+TEST(IteratorCategories, Comparisons) {
+    vector<int> a(10);
+    auto z = zip(a);
+    for (int i = 0; i < 10; ++i) {
+        auto it1 = z.begin() + i;
+        for (int j = 0; j < 10; ++j) {
+            auto it2 = z.begin() + j;
+            ASSERT_EQ(it2 >  it1, j >  i) << "Error in operator >";
+            ASSERT_EQ(it2 >= it1, j >= i) << "Error in operator >=";
+            ASSERT_EQ(it2 <  it1, j <  i) << "Error in operator <";
+            ASSERT_EQ(it2 <= it1, j <= i) << "Error in operator <=";
+        }
+    }
+}
+
+TEST(IteratorCategories, OperatosSquareBrackets) {
+    vector<int> a(10);
+    iota(a.begin(), a.end(), 0);
+    auto z = zip(a);
+    for (int i = 0; i < 10; ++i) {
+        auto it1 = z.begin() + i;
+        for (int j = 0; j < 10 - i; ++j) {
+            auto [value] = it1[j];
+            ASSERT_EQ(value, i + j) << "(z.begin() + " << i << ")[" << j << "] returns wrong value";
+        }
+    }
+}
+
+TEST(IteratorCategories, Swappable) {
+    vector<int> a = {3, 4};
+    auto z = zip(a, a);
+    auto it1 = z.begin();
+    auto it2 = it1 + 1;
+    ASSERT_TRUE(it2 > it1);
+
+    swap(it1, it2);
+    ASSERT_TRUE(it2 < it1);
+    ASSERT_NE(it1, it2);
+    ASSERT_EQ(it2, z.begin());
+    ASSERT_EQ(it1, z.begin() + 1);
+    ASSERT_EQ(*it1, make_tuple(4, 4));
+    ASSERT_EQ(*it2, make_tuple(3, 3));
 }

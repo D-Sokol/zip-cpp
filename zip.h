@@ -52,15 +52,12 @@ namespace zip_impl {
             ((f(std::get<Indexes>(*this))), ...);
         }
 
-        template<size_t... Indexes>
-        inline bool AnyEquals(const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
+        template<bool default_value, typename F, size_t... Indexes>
+        inline bool AnyPair(F&& f, const ZipIterator& other, std::integer_sequence<size_t, Indexes...>) const {
             if constexpr (sizeof...(Indexes) != 0)
-                return (... || (std::get<Indexes>(*this) == std::get<Indexes>(other)));
+                return (... || f(std::get<Indexes>(*this), std::get<Indexes>(other)));
             else
-                // Так как вызов функции zip() без аргументов должен возвращать пустой диапазон,
-                //  то в случае, когда список типов Types пуст, все итераторы должны считаться равными между собой.
-                // Предыдущая ветка при пустом списке возвращает false, см. https://en.cppreference.com/w/cpp/language/fold
-                return true;
+                return default_value;
         }
 
         template<size_t... Indexes>
@@ -114,11 +111,70 @@ namespace zip_impl {
             //    когда хотя бы один из хранимых итераторов в z1 равен соответствующему хранимому итератору z2.
             // В любом из рассматриваемых случаев достаточно проверить, выполнено ли равенство хранимых итераторов
             //  хотя бы для одной пары.
-            return AnyEquals(other, std::index_sequence_for<Iters...>{});
+            return AnyPair<true>([](const auto& it1, const auto& it2){ return it1==it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         inline bool operator!=(const ZipIterator& other) const {
             return !operator==(other);
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        ZipIterator& operator+=(int n) {
+            ApplyToIterators([n](auto& it) { it += n; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        ZipIterator operator+(int n) {
+            ZipIterator copy = *this;
+            return copy += n;
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        ZipIterator& operator-=(int n) {
+            ApplyToIterators([n](auto& it) { it -= n; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        ZipIterator operator-(int n) {
+            ZipIterator copy = *this;
+            return copy -= n;
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        difference_type operator-(const ZipIterator& other) const {
+            static_assert(sizeof...(Iters) != 0);
+            return std::get<0>(*this) - std::get<0>(other);
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        bool operator>(const ZipIterator& other) {
+            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 > it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        bool operator<(const ZipIterator& other) {
+            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 < it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        bool operator>=(const ZipIterator& other) {
+            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        bool operator<=(const ZipIterator& other) {
+            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        value_type operator[](size_t index) {
+            return *(*this + index);
+        }
+
+        void Swap(ZipIterator& other) {
+            Base::swap(other);
         }
 
         inline const Base& AsTuple() const { return *this; }
@@ -143,6 +199,11 @@ namespace zip_impl {
     template<typename... Types>
     Zip<Types...>::Zip(Types&& ... args)
             : begin_(std::begin(args)...), end_(std::end(args)...) {
+    }
+
+    template <typename ... Types>
+    void swap(ZipIterator<Types...>& it1, ZipIterator<Types...>& it2) {
+        it1.Swap(it2);
     }
 }
 
