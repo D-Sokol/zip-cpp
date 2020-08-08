@@ -125,7 +125,7 @@ namespace zip_impl {
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        ZipIterator operator+(int n) {
+        ZipIterator operator+(int n) const {
             ZipIterator copy = *this;
             return copy += n;
         }
@@ -137,7 +137,7 @@ namespace zip_impl {
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        ZipIterator operator-(int n) {
+        ZipIterator operator-(int n) const {
             ZipIterator copy = *this;
             return copy -= n;
         }
@@ -149,22 +149,22 @@ namespace zip_impl {
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        bool operator>(const ZipIterator& other) {
+        bool operator>(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 > it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        bool operator<(const ZipIterator& other) {
+        bool operator<(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 < it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        bool operator>=(const ZipIterator& other) {
+        bool operator>=(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
-        bool operator<=(const ZipIterator& other) {
+        bool operator<=(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
@@ -187,9 +187,9 @@ namespace zip_impl {
 
         explicit Zip(Types&& ... args);
 
-        inline iterator begin() { return begin_; }
+        inline iterator begin() const { return begin_; }
 
-        inline iterator end() { return end_; }
+        inline iterator end() const { return end_; }
 
     private:
         iterator begin_;
