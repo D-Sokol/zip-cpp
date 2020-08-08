@@ -239,10 +239,12 @@ TEST(IteratorCategories, Arithmetics) {
     for (int i = 0; i < 10; ++i) {
         auto it1 = begin(z);
         auto it2 = it1 + i;
+        auto it3 = i + it1;
         it1 += i;
         EXPECT_EQ(it1, it2);
         ASSERT_EQ(get<0>(*it1), i) << "Error in operator +=";
-        ASSERT_EQ(get<0>(*it2), i) << "Error in operator +";
+        ASSERT_EQ(get<0>(*it2), i) << "Error in operator +(iterator, int)";
+        ASSERT_EQ(get<0>(*it3), i) << "Error in operator +(int, iterator)";
     }
     for (int i = 1; i < 11; ++i) {
         auto it1 = end(z);

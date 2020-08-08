@@ -180,6 +180,11 @@ namespace zip_impl {
         inline const Base& AsTuple() const { return *this; }
     };
 
+    template <typename ... Iters, typename = std::enable_if_t<std::is_convertible_v<typename ZipIterator<Iters...>::iterator_category, std::random_access_iterator_tag>, int>>
+    inline auto operator+(int n, const ZipIterator<Iters...>& it) {
+        return it + n;
+    }
+
     template<typename... Types>
     class Zip {
     public:
