@@ -160,12 +160,12 @@ namespace zip_impl {
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
         bool operator>=(const ZipIterator& other) const {
-            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
+            return AnyPair<true>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
         bool operator<=(const ZipIterator& other) const {
-            return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
+            return AnyPair<true>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
