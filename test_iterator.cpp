@@ -293,3 +293,15 @@ TEST(IteratorCategories, Swappable) {
     ASSERT_EQ(*it1, make_tuple(4, 4));
     ASSERT_EQ(*it2, make_tuple(3, 3));
 }
+
+TEST(IteratorCategories, SwappableValues) {
+    vector<int> a = {3, 4};
+    char pad[2];
+    vector<int> expected = {4, 3};
+    auto z = zip(a, pad);
+
+    auto it1 = z.begin();
+    auto it2 = it1 + 1;
+    swap(*it1, *it2);
+    ASSERT_EQ(a, expected);
+}

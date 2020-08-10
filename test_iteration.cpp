@@ -163,3 +163,16 @@ TEST(Iteration, CustomTypes) {
     }
     ASSERT_EQ(expected, obtained);
 }
+
+TEST(Iteration, SortWithZip) {
+    vector<int> v1 = { 2,  4,  1,  3,  1,  1,  3,  4};
+    vector<int> v2 = {22, 54, 41, 13, 11, 61, 43, 34};
+    auto z = zip(v1, v2);
+    sort(z.begin(), z.end());
+
+    const vector<int> expected1 = { 1,  1,  1,  2,  3,  3,  4,  4};
+    const vector<int> expected2 = {11, 41, 61, 22, 13, 43, 34, 54};
+
+    ASSERT_EQ(v1, expected1);
+    ASSERT_EQ(v2, expected2);
+}
