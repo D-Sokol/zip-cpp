@@ -31,13 +31,6 @@ TEST(Iterator, NestedZipConstructable) {
     auto z1 = zip(a, b);
     auto z2 = zip(c, d);
 
-    using normal_zip_iter = remove_reference_t<decltype(z1.begin())>;
-    using nested_zip_iter = remove_reference_t<decltype(zip(z1, z2).begin())>;
-
-    static_assert(is_same_v<normal_zip_iter::value_type, tuple<int&, int&>>);
-    static_assert( is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&> , tuple<int&, int&> >>);
-    static_assert(!is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&>&, tuple<int&, int&>&>>);
-
     for (const auto& [tup1, tup2] : zip(z1, z2)) {
         ASSERT_EQ(get<0>(tup1), 10);
         ASSERT_EQ(get<1>(tup1), 10);
@@ -115,7 +108,9 @@ TEST(Iterator, ReferenceReadValue) {
 
     {
         ZI z1(a.begin(), s.begin(), c.begin());
-        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        static_assert(is_same_v<decltype(get<0>(*z1)), int&>);
+        static_assert(is_same_v<decltype(get<1>(*z1)), char&>);
+        static_assert(is_same_v<decltype(get<2>(*z1)), const bool&>);
         {
             auto[av, sv, cv] = *z1;
             ASSERT_EQ(av, 10);
@@ -129,7 +124,9 @@ TEST(Iterator, ReferenceReadValue) {
     }
     {
         ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
-        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        static_assert(is_same_v<decltype(get<0>(*z1)), int&>);
+        static_assert(is_same_v<decltype(get<1>(*z1)), char&>);
+        static_assert(is_same_v<decltype(get<2>(*z1)), const bool&>);
         auto[av, sv, cv] = *z1;
         ASSERT_EQ(av, 30);
         ASSERT_EQ(sv, 'b');
