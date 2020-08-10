@@ -137,22 +137,6 @@ TEST(Iterator, ReferenceReadValue) {
     }
 }
 
-TEST(Iterator, ReferenceReadConstIterator) {
-    vector<int> a = {10, 20, 30};
-    string s = "abcd";
-    const array<bool, 2> c = {false, true};
-    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
-
-    {
-        const ZI z1(a.begin(), s.begin(), c.begin());
-        static_assert(is_same_v<decltype(*z1), tuple<const int&, const char&, const bool&>>);
-        auto[av, sv, cv] = *z1;
-        ASSERT_EQ(av, 10);
-        ASSERT_EQ(sv, 'a');
-        ASSERT_EQ(cv, false);
-    }
-}
-
 TEST(Iterator, ReferenceReadAfterIncrement) {
     vector<int> a = {10, 20, 30};
     string s = "abcd";

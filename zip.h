@@ -16,7 +16,7 @@ namespace zip_impl {
     template<typename... Iterators>
     struct value_helper<ZipIterator<Iterators...>> {
         using value = typename ZipIterator<Iterators...>::value_type;
-        using const_value = typename ZipIterator<Iterators...>::const_value_type;
+        // using const_value = typename ZipIterator<Iterators...>::const_value_type;
     };
 
     template<typename... Iters>
@@ -43,9 +43,6 @@ namespace zip_impl {
         using pointer = value_type*;
         using reference = value_type&;
 
-        // Something like tuple<const int&, const int&>. Used as return value of constant version of operator*.
-        using const_value_type = std::tuple<typename value_helper<Iters>::const_value...>;
-
     private:
         template<typename F, size_t... Indexes>
         inline void ApplyToIterators(F&& f, std::integer_sequence<size_t, Indexes...>) {
@@ -65,11 +62,6 @@ namespace zip_impl {
             return std::forward_as_tuple(*std::get<Indexes>(*this)...);
         }
 
-        template<size_t... Indexes>
-        inline const_value_type CombineValues(std::integer_sequence<size_t, Indexes...>) const {
-            return std::forward_as_tuple(*std::get<Indexes>(*this)...);
-        }
-
     public:
         ZipIterator& operator++() {
             ApplyToIterators([](auto& x){ ++x; }, std::index_sequence_for<Iters...>{});
@@ -83,10 +75,6 @@ namespace zip_impl {
         }
 
         value_type operator*() {
-            return CombineValues(std::index_sequence_for<Iters...>{});
-        }
-
-        const_value_type operator*() const {
             return CombineValues(std::index_sequence_for<Iters...>{});
         }
 
