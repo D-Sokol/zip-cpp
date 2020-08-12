@@ -25,9 +25,20 @@ namespace zip_impl {
         using Base = std::tuple<Elements...>;
         Base base;
 
+        Tuple(const Tuple&) = default;
+        Tuple(Tuple&&) noexcept = default;
         Tuple(const Base& b) : base(b) {}
-        Tuple(Base&& b) : base(move(b)) {}
-        explicit Tuple(Elements&&... elem) : base(std::forward<Elements>(elem)...) {}
+        Tuple(Base&& b) noexcept : base(std::move(b)) {}
+        template <typename ... UElements, typename = std::enable_if<std::conjunction_v<std::is_constructible<Elements, UElements>...>, int>>
+        explicit Tuple(UElements&&... elem) : base(std::forward<UElements>(elem)...) {}
+
+        Tuple& operator=(Tuple&&) noexcept = default;
+        Tuple& operator=(const Tuple&) = default;
+        template <typename U>
+        Tuple& operator=(U&& other) {
+            base = std::forward<U>(other);
+            return *this;
+        }
 
         void swap(Tuple& other) {
             using std::swap;
