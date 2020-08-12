@@ -302,3 +302,21 @@ TEST(IteratorCategories, SwappableValues) {
     swap(*it1, *it2);
     ASSERT_EQ(a, expected);
 }
+
+TEST(Iterator, AssignableAfterPostIncrement) {
+    vector<int> a(5), b(6);
+    auto z = zip(a, b);
+    auto it = z.begin();
+    for (int i = 0; i < 5; ++i) {
+        *(it++) = make_tuple(i, i);
+    }
+
+    vector<int> a_expected = {0, 1, 2, 3, 4};
+    vector<int> b_expected = {0, 1, 2, 3, 4, 0};
+
+    EXPECT_EQ(it, z.end());
+    EXPECT_EQ(&get<1>(*it), &(b.back()));
+
+    ASSERT_EQ(a, a_expected);
+    ASSERT_EQ(b, b_expected);
+}

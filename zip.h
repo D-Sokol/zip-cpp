@@ -114,10 +114,23 @@ namespace zip_impl {
             return *this;
         }
 
+        ZipIterator operator++(int) {
+            auto it = *this;
+            ++(*this);
+            return it;
+        }
+
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
         ZipIterator& operator--() {
             ApplyToIterators([](auto& x){ --x; }, std::index_sequence_for<Iters...>{});
             return *this;
+        }
+
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
+        ZipIterator operator--(int) {
+            auto it = *this;
+            --(*this);
+            return it;
         }
 
         value_type operator*() {
