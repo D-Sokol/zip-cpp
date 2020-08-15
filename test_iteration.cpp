@@ -109,16 +109,6 @@ TEST(Iteration, CompareMaps) {
     }
 }
 
-template <typename Iter>
-class IterRange {
-    Iter begin_;
-    Iter end_;
-public:
-    IterRange(Iter begin, Iter end) : begin_(begin), end_(end) {}
-    Iter begin() const { return begin_; }
-    Iter end() const { return end_; }
-};
-
 class Range {
     int start_;
     int stop_;
@@ -147,7 +137,7 @@ public:
 TEST(Iteration, CustomTypes) {
     stringstream input_stream("one two three four five");
     Range count(1, 1000);
-    IterRange input(istream_iterator<string>(input_stream), istream_iterator<string>{});
+    IterRange<istream_iterator<string>> input(istream_iterator<string>(input_stream), istream_iterator<string>{});
 
     map<string, int> expected = {
         {"one", 1},

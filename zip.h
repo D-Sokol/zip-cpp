@@ -297,6 +297,16 @@ namespace zipcpp {
     zip_impl::Zip<Types...> zip(Types&& ... args) {
         return zip_impl::Zip<Types...>(std::forward<Types>(args)...);
     }
+
+    template <typename Iter>
+    class IterRange {
+        Iter begin_;
+        Iter end_;
+    public:
+        IterRange(Iter begin, Iter end) : begin_(begin), end_(end) {}
+        Iter begin() const { return begin_; }
+        Iter end() const { return end_; }
+    };
 }
 
 namespace std {
