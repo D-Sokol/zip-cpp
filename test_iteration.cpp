@@ -5,6 +5,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zipcpp;
 
 TEST(SimpleIteration, PrintVectors) {
     vector<int> a = {10, 20, 30, 40, 50};
@@ -108,16 +109,6 @@ TEST(Iteration, CompareMaps) {
     }
 }
 
-template <typename Iter>
-class IterRange {
-    Iter begin_;
-    Iter end_;
-public:
-    IterRange(Iter begin, Iter end) : begin_(begin), end_(end) {}
-    Iter begin() const { return begin_; }
-    Iter end() const { return end_; }
-};
-
 class Range {
     int start_;
     int stop_;
@@ -146,7 +137,7 @@ public:
 TEST(Iteration, CustomTypes) {
     stringstream input_stream("one two three four five");
     Range count(1, 1000);
-    IterRange input(istream_iterator<string>(input_stream), istream_iterator<string>{});
+    IterRange<istream_iterator<string>> input(istream_iterator<string>(input_stream), istream_iterator<string>{});
 
     map<string, int> expected = {
         {"one", 1},
@@ -162,4 +153,31 @@ TEST(Iteration, CustomTypes) {
         obtained[word] = number;
     }
     ASSERT_EQ(expected, obtained);
+}
+
+template <typename RandomIt>
+void SortWithSwap(RandomIt first, RandomIt last) {
+    if (first != last) {
+        SortWithSwap(first, last - 1);
+        while (last != first) {
+            auto next = last - 1;
+            if (*next < *last)
+                return;
+            std::iter_swap(last, next);
+            last = next;
+        }
+    }
+}
+
+TEST(Iteration, SortWithZip) {
+    vector<int> v1 = { 2,  4,  1,  3,  1,  1,  3,  4};
+    vector<int> v2 = {22, 54, 41, 13, 11, 61, 43, 34};
+    auto z = zip(v1, v2);
+    SortWithSwap(z.begin(), z.end());
+
+    const vector<int> expected1 = { 1,  1,  1,  2,  3,  3,  4,  4};
+    const vector<int> expected2 = {11, 41, 61, 22, 13, 43, 34, 54};
+
+    ASSERT_EQ(v1, expected1);
+    ASSERT_EQ(v2, expected2);
 }

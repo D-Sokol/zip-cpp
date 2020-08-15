@@ -7,6 +7,52 @@ namespace zip_impl {
     template<typename...>
     class ZipIterator;
 
+    template <typename ... Elements>
+    class Tuple;
+
+    template <typename T>
+    struct IsZipTuple : public std::false_type {};
+
+    template <typename ... Elements>
+    struct IsZipTuple<Tuple<Elements...>> : public std::true_type {};
+
+    template <typename ... Elements>
+    struct Tuple {
+        static_assert(std::conjunction_v<
+                std::disjunction< std::is_reference<Elements>, IsZipTuple<Elements> >...
+        >);
+
+        using Base = std::tuple<Elements...>;
+        Base base;
+
+        Tuple(const Tuple&) = default;
+        Tuple(Tuple&&) noexcept = default;
+        Tuple(const Base& b) : base(b) {}
+        Tuple(Base&& b) noexcept : base(std::move(b)) {}
+        template <typename ... UElements, typename = std::enable_if<std::conjunction_v<std::is_constructible<Elements, UElements>...>, int>>
+        explicit Tuple(UElements&&... elem) : base(std::forward<UElements>(elem)...) {}
+
+        Tuple& operator=(Tuple&&) noexcept = default;
+        Tuple& operator=(const Tuple&) = default;
+        template <typename U>
+        Tuple& operator=(U&& other) {
+            base = std::forward<U>(other);
+            return *this;
+        }
+
+        void swap(Tuple& other) {
+            using std::swap;
+            swap(base, other.base);
+        }
+
+        template <size_t Index>
+        auto& get() const {
+            return std::get<Index>(base);
+        }
+
+        //operator const Base&() const { return base; }
+    };
+
     template<typename Iterator>
     struct value_helper {
         using value = typename std::iterator_traits<Iterator>::reference;
@@ -16,7 +62,7 @@ namespace zip_impl {
     template<typename... Iterators>
     struct value_helper<ZipIterator<Iterators...>> {
         using value = typename ZipIterator<Iterators...>::value_type;
-        using const_value = typename ZipIterator<Iterators...>::const_value_type;
+        // using const_value = typename ZipIterator<Iterators...>::const_value_type;
     };
 
     template<typename... Iters>
@@ -38,13 +84,10 @@ namespace zip_impl {
         static_assert(std::is_convertible_v<iterator_category, std::input_iterator_tag>);
 
         // Something like tuple<int&, int&>. Used as return value of non-constant version of operator*.
-        using value_type = std::tuple<typename value_helper<Iters>::value...>;
+        using value_type = Tuple<typename value_helper<Iters>::value...>;
         using difference_type = int;
         using pointer = value_type*;
         using reference = value_type&;
-
-        // Something like tuple<const int&, const int&>. Used as return value of constant version of operator*.
-        using const_value_type = std::tuple<typename value_helper<Iters>::const_value...>;
 
     private:
         template<typename F, size_t... Indexes>
@@ -62,12 +105,7 @@ namespace zip_impl {
 
         template<size_t... Indexes>
         inline value_type CombineValues(std::integer_sequence<size_t, Indexes...>) {
-            return std::forward_as_tuple(*std::get<Indexes>(*this)...);
-        }
-
-        template<size_t... Indexes>
-        inline const_value_type CombineValues(std::integer_sequence<size_t, Indexes...>) const {
-            return std::forward_as_tuple(*std::get<Indexes>(*this)...);
+            return value_type(*std::get<Indexes>(*this)...);
         }
 
     public:
@@ -76,17 +114,26 @@ namespace zip_impl {
             return *this;
         }
 
+        ZipIterator operator++(int) {
+            auto it = *this;
+            ++(*this);
+            return it;
+        }
+
         template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
         ZipIterator& operator--() {
             ApplyToIterators([](auto& x){ --x; }, std::index_sequence_for<Iters...>{});
             return *this;
         }
 
-        value_type operator*() {
-            return CombineValues(std::index_sequence_for<Iters...>{});
+        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
+        ZipIterator operator--(int) {
+            auto it = *this;
+            --(*this);
+            return it;
         }
 
-        const_value_type operator*() const {
+        value_type operator*() {
             return CombineValues(std::index_sequence_for<Iters...>{});
         }
 
@@ -210,9 +257,67 @@ namespace zip_impl {
     void swap(ZipIterator<Types...>& it1, ZipIterator<Types...>& it2) {
         it1.Swap(it2);
     }
+
+    template <typename ... Elements>
+    void swap(const Tuple<Elements...>& lhs, const Tuple<Elements...>& rhs) {
+        using std::swap;
+        swap(lhs.base, rhs.base);
+    }
+
+    template <typename ... Elements>
+    void swap(Tuple<Elements...>&& lhs, Tuple<Elements...>&& rhs) {
+        using std::swap;
+        swap(lhs.base, rhs.base);
+    }
+
+    template <size_t Index, typename ... Elements>
+    auto& get(const Tuple<Elements...>& tup) {
+        return tup.template get<Index>();
+    }
+
+    template <typename ... Args1, typename ... Args2>
+    bool operator==(const Tuple<Args1...>& lhs, const Tuple<Args2...>& rhs) {
+        return lhs.base == rhs.base;
+    }
+
+    template <typename ... Args1, typename ... Args2>
+    bool operator==(const std::tuple<Args1...>& lhs, const Tuple<Args2...>& rhs) {
+        return lhs == rhs.base;
+    }
+
+    template <typename ... Args1, typename ... Args2>
+    bool operator==(const Tuple<Args1...>& lhs, const std::tuple<Args2...>& rhs) {
+        return lhs.base == rhs;
+    }
+
+    template <typename ... Args1, typename ... Args2>
+    bool operator<(const Tuple<Args1...>& lhs, const Tuple<Args2...>& rhs) {
+        return lhs.base < rhs.base;
+    }
 }
 
-template<typename... Types>
-zip_impl::Zip<Types...> zip(Types&& ... args) {
-    return zip_impl::Zip<Types...>(std::forward<Types>(args)...);
+
+namespace zipcpp {
+    template<typename... Types>
+    zip_impl::Zip<Types...> zip(Types&& ... args) {
+        return zip_impl::Zip<Types...>(std::forward<Types>(args)...);
+    }
+
+    template <typename Iter>
+    class IterRange {
+        Iter begin_;
+        Iter end_;
+    public:
+        IterRange(Iter begin, Iter end) : begin_(begin), end_(end) {}
+        Iter begin() const { return begin_; }
+        Iter end() const { return end_; }
+    };
+}
+
+namespace std {
+    template <typename ... Types>
+    struct tuple_size<zip_impl::Tuple<Types...>> : public std::integral_constant<size_t, sizeof...(Types)> {};
+
+    template <size_t Index, typename ... Types>
+    struct tuple_element<Index, zip_impl::Tuple<Types...>> : public tuple_element<Index, std::tuple<Types...>> {};
 }

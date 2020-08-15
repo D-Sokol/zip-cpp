@@ -10,6 +10,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zipcpp;
 using namespace zip_impl;
 
 TEST(Iterator, Constructable) {
@@ -30,13 +31,6 @@ TEST(Iterator, NestedZipConstructable) {
     vector<int> d = {10};
     auto z1 = zip(a, b);
     auto z2 = zip(c, d);
-
-    using normal_zip_iter = remove_reference_t<decltype(z1.begin())>;
-    using nested_zip_iter = remove_reference_t<decltype(zip(z1, z2).begin())>;
-
-    static_assert(is_same_v<normal_zip_iter::value_type, tuple<int&, int&>>);
-    static_assert( is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&> , tuple<int&, int&> >>);
-    static_assert(!is_same_v<nested_zip_iter::value_type, tuple<tuple<int&, int&>&, tuple<int&, int&>&>>);
 
     for (const auto& [tup1, tup2] : zip(z1, z2)) {
         ASSERT_EQ(get<0>(tup1), 10);
@@ -115,7 +109,9 @@ TEST(Iterator, ReferenceReadValue) {
 
     {
         ZI z1(a.begin(), s.begin(), c.begin());
-        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        static_assert(is_same_v<decltype(get<0>(*z1)), int&>);
+        static_assert(is_same_v<decltype(get<1>(*z1)), char&>);
+        static_assert(is_same_v<decltype(get<2>(*z1)), const bool&>);
         {
             auto[av, sv, cv] = *z1;
             ASSERT_EQ(av, 10);
@@ -129,27 +125,13 @@ TEST(Iterator, ReferenceReadValue) {
     }
     {
         ZI z1(a.begin() + 2, s.begin() + 1, c.begin() + 1);
-        static_assert(is_same_v<decltype(*z1), tuple<int&, char&, const bool&>>);
+        static_assert(is_same_v<decltype(get<0>(*z1)), int&>);
+        static_assert(is_same_v<decltype(get<1>(*z1)), char&>);
+        static_assert(is_same_v<decltype(get<2>(*z1)), const bool&>);
         auto[av, sv, cv] = *z1;
         ASSERT_EQ(av, 30);
         ASSERT_EQ(sv, 'b');
         ASSERT_EQ(cv, true);
-    }
-}
-
-TEST(Iterator, ReferenceReadConstIterator) {
-    vector<int> a = {10, 20, 30};
-    string s = "abcd";
-    const array<bool, 2> c = {false, true};
-    using ZI = ZipIterator<vector<int>::iterator, string::iterator, array<bool, 2>::const_iterator>;
-
-    {
-        const ZI z1(a.begin(), s.begin(), c.begin());
-        static_assert(is_same_v<decltype(*z1), tuple<const int&, const char&, const bool&>>);
-        auto[av, sv, cv] = *z1;
-        ASSERT_EQ(av, 10);
-        ASSERT_EQ(sv, 'a');
-        ASSERT_EQ(cv, false);
     }
 }
 
@@ -310,4 +292,34 @@ TEST(IteratorCategories, Swappable) {
     ASSERT_EQ(it1, z.begin() + 1);
     ASSERT_EQ(*it1, make_tuple(4, 4));
     ASSERT_EQ(*it2, make_tuple(3, 3));
+}
+
+TEST(IteratorCategories, SwappableValues) {
+    vector<int> a = {3, 4};
+    char pad[2];
+    vector<int> expected = {4, 3};
+    auto z = zip(a, pad);
+
+    auto it1 = z.begin();
+    auto it2 = it1 + 1;
+    swap(*it1, *it2);
+    ASSERT_EQ(a, expected);
+}
+
+TEST(Iterator, AssignableAfterPostIncrement) {
+    vector<int> a(5), b(6);
+    auto z = zip(a, b);
+    auto it = z.begin();
+    for (int i = 0; i < 5; ++i) {
+        *(it++) = make_tuple(i, i);
+    }
+
+    vector<int> a_expected = {0, 1, 2, 3, 4};
+    vector<int> b_expected = {0, 1, 2, 3, 4, 0};
+
+    EXPECT_EQ(it, z.end());
+    EXPECT_EQ(&get<1>(*it), &(b.back()));
+
+    ASSERT_EQ(a, a_expected);
+    ASSERT_EQ(b, b_expected);
 }
