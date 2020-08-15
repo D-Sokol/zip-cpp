@@ -291,9 +291,12 @@ namespace zip_impl {
     }
 }
 
-template<typename... Types>
-zip_impl::Zip<Types...> zip(Types&& ... args) {
-    return zip_impl::Zip<Types...>(std::forward<Types>(args)...);
+
+namespace zipcpp {
+    template<typename... Types>
+    zip_impl::Zip<Types...> zip(Types&& ... args) {
+        return zip_impl::Zip<Types...>(std::forward<Types>(args)...);
+    }
 }
 
 namespace std {

@@ -5,6 +5,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zipcpp;
 
 TEST(SimpleIteration, PrintVectors) {
     vector<int> a = {10, 20, 30, 40, 50};

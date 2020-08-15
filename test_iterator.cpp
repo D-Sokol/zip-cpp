@@ -10,6 +10,7 @@
 #include "zip.h"
 
 using namespace std;
+using namespace zipcpp;
 using namespace zip_impl;
 
 TEST(Iterator, Constructable) {
