@@ -82,6 +82,10 @@ namespace zip_impl {
         using Base::Base;
         using iterator_category = typename category_helper<Iters...>::type;
         static_assert(std::is_convertible_v<iterator_category, std::input_iterator_tag>);
+    protected:
+        template <typename required_tag>
+        using minimal_category = std::enable_if_t<std::is_convertible_v<iterator_category, required_tag>, int>;
+    public:
 
         // Something like tuple<int&, int&>. Used as return value of non-constant version of operator*.
         using value_type = Tuple<typename value_helper<Iters>::value...>;
@@ -120,13 +124,13 @@ namespace zip_impl {
             return it;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
+        template <typename = minimal_category<std::bidirectional_iterator_tag>>
         ZipIterator& operator--() {
             ApplyToIterators([](auto& x){ --x; }, std::index_sequence_for<Iters...>{});
             return *this;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::bidirectional_iterator_tag>, int>>
+        template <typename = minimal_category<std::bidirectional_iterator_tag>>
         ZipIterator operator--(int) {
             auto it = *this;
             --(*this);
@@ -165,57 +169,57 @@ namespace zip_impl {
             return !operator==(other);
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         ZipIterator& operator+=(int n) {
             ApplyToIterators([n](auto& it) { it += n; }, std::index_sequence_for<Iters...>{});
             return *this;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         ZipIterator operator+(int n) const {
             ZipIterator copy = *this;
             return copy += n;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         ZipIterator& operator-=(int n) {
             ApplyToIterators([n](auto& it) { it -= n; }, std::index_sequence_for<Iters...>{});
             return *this;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         ZipIterator operator-(int n) const {
             ZipIterator copy = *this;
             return copy -= n;
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         difference_type operator-(const ZipIterator& other) const {
             static_assert(sizeof...(Iters) != 0);
             return std::get<0>(*this) - std::get<0>(other);
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         bool operator>(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 > it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         bool operator<(const ZipIterator& other) const {
             return AnyPair<false>([](const auto& it1, const auto& it2){ return it1 < it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         bool operator>=(const ZipIterator& other) const {
             return AnyPair<true>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         bool operator<=(const ZipIterator& other) const {
             return AnyPair<true>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
         }
 
-        template <typename = std::enable_if_t<std::is_convertible_v<iterator_category, std::random_access_iterator_tag>, int>>
+        template <typename = minimal_category<std::random_access_iterator_tag>>
         value_type operator[](size_t index) {
             return *(*this + index);
         }
