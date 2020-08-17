@@ -78,3 +78,5 @@ TEST(Zip, EndMethod) {
         ASSERT_EQ(c_it, end(c));
     }
 }
+
+// TODO: add tests for constant begin and end.

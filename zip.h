@@ -6,6 +6,8 @@ namespace zip_impl {
 
     template<typename...>
     class ZipIterator;
+    template<typename...>
+    class ConstZipIterator;
 
     template <typename ... Elements>
     class Tuple;
@@ -62,7 +64,13 @@ namespace zip_impl {
     template<typename... Iterators>
     struct value_helper<ZipIterator<Iterators...>> {
         using value = typename ZipIterator<Iterators...>::value_type;
-        // using const_value = typename ZipIterator<Iterators...>::const_value_type;
+        using const_value = typename ConstZipIterator<Iterators...>::value_type;
+    };
+
+    template<typename... Iterators>
+    struct value_helper<ConstZipIterator<Iterators...>> {
+        using value = typename ConstZipIterator<Iterators...>::value_type;
+        using const_value = typename ConstZipIterator<Iterators...>::value_type;
     };
 
     template<typename... Iters>
@@ -239,8 +247,127 @@ namespace zip_impl {
         }
     };
 
+    template<typename... Iters>
+    class ConstZipIterator : public BaseZipIterator<Iters...> {
+    public:
+        using BaseZipIterator<Iters...>::BaseZipIterator;
+
+        using Self = ConstZipIterator<Iters...>;
+
+        using value_type = Tuple<typename value_helper<Iters>::const_value...>;
+        using difference_type = int;
+        using pointer = value_type*;
+        using reference = value_type&;
+    private:
+        template <typename required_tag>
+        using minimal_category = typename BaseZipIterator<Iters...>::template minimal_category<required_tag>;
+
+    public:
+        Self& operator++() {
+            this->ApplyToIterators([](auto& x){ ++x; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        Self operator++(int) {
+            auto it = *this;
+            ++(*this);
+            return it;
+        }
+
+        template <typename = minimal_category<std::bidirectional_iterator_tag>>
+        Self& operator--() {
+            this->ApplyToIterators([](auto& x){ --x; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        template <typename = minimal_category<std::bidirectional_iterator_tag>>
+        Self operator--(int) {
+            auto it = *this;
+            --(*this);
+            return it;
+        }
+
+        value_type operator*() {
+            return this->template CombineValues<value_type>(std::index_sequence_for<Iters...>{});
+        }
+
+        bool operator==(const Self& other) const {
+            if (this == &other)
+                return true;
+            return this->template AnyPair<Self, true>([](const auto& it1, const auto& it2){ return it1==it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        inline bool operator!=(const Self& other) const {
+            return !operator==(other);
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        Self& operator+=(int n) {
+            this->ApplyToIterators([n](auto& it) { it += n; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        Self operator+(int n) const {
+            ZipIterator copy = *this;
+            return copy += n;
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        Self& operator-=(int n) {
+            this->ApplyToIterators([n](auto& it) { it -= n; }, std::index_sequence_for<Iters...>{});
+            return *this;
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        Self operator-(int n) const {
+            ZipIterator copy = *this;
+            return copy -= n;
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        difference_type operator-(const Self& other) const {
+            static_assert(sizeof...(Iters) != 0);
+            return std::get<0>(*this) - std::get<0>(other);
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        bool operator>(const Self& other) const {
+            return this->template AnyPair<Self, false>([](const auto& it1, const auto& it2){ return it1 > it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        bool operator<(const Self& other) const {
+            return this->template AnyPair<Self, false>([](const auto& it1, const auto& it2){ return it1 < it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        bool operator>=(const Self& other) const {
+            return this->template AnyPair<Self, true>([](const auto& it1, const auto& it2){ return it1 >= it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        bool operator<=(const Self& other) const {
+            return this->template AnyPair<Self, true>([](const auto& it1, const auto& it2){ return it1 <= it2; }, other, std::index_sequence_for<Iters...>{});
+        }
+
+        template <typename = minimal_category<std::random_access_iterator_tag>>
+        value_type operator[](size_t index) {
+            return *(*this + index);
+        }
+
+        void Swap(Self& other) {
+            std::tuple<Iters...>::swap(other);
+        }
+    };
+
     template <typename ... Iters, typename = std::enable_if_t<std::is_convertible_v<typename ZipIterator<Iters...>::iterator_category, std::random_access_iterator_tag>, int>>
     inline auto operator+(int n, const ZipIterator<Iters...>& it) {
+        return it + n;
+    }
+
+    template <typename ... Iters, typename = std::enable_if_t<std::is_convertible_v<typename ConstZipIterator<Iters...>::iterator_category, std::random_access_iterator_tag>, int>>
+    inline auto operator+(int n, const ConstZipIterator<Iters...>& it) {
         return it + n;
     }
 
