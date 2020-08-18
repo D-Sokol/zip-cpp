@@ -85,9 +85,12 @@ namespace zip_impl {
 
     template<typename... Iters>
     class BaseZipIterator : protected std::tuple<Iters...> {
-        using Base = std::tuple<Iters...>;
     public:
+        using Base = std::tuple<Iters...>;
         using Base::Base;
+        BaseZipIterator(const Base& base) : Base(base) {}
+        BaseZipIterator(Base&& base) : Base(std::move(base)) {}
+
         using iterator_category = typename category_helper<Iters...>::type;
         static_assert(std::is_convertible_v<iterator_category, std::input_iterator_tag>);
     protected:
@@ -119,6 +122,9 @@ namespace zip_impl {
     class ZipIterator : public BaseZipIterator<Iters...> {
     public:
         using BaseZipIterator<Iters...>::BaseZipIterator;
+        ZipIterator(const typename BaseZipIterator<Iters...>::Base& base) : BaseZipIterator<Iters...>(base) {}
+        ZipIterator(typename BaseZipIterator<Iters...>::Base&& base) : BaseZipIterator<Iters...>(std::move(base)) {}
+
 
         using Self = ZipIterator<Iters...>;
 
@@ -375,16 +381,20 @@ namespace zip_impl {
     class Zip {
     public:
         using iterator = ZipIterator<std::remove_reference_t<decltype(std::begin(std::declval<Types>()))>...>;
+        using const_iterator = ConstZipIterator<std::remove_reference_t<decltype(std::begin(std::declval<Types>()))>...>;
+    private:
+        using stored_iterators_tuple = typename iterator::Base;
+    public:
 
         explicit Zip(Types&& ... args);
 
-        inline iterator begin() const { return begin_; }
+        inline iterator begin() const { return iterator(begin_); }
 
-        inline iterator end() const { return end_; }
+        inline iterator end() const { return iterator(end_); }
 
     private:
-        iterator begin_;
-        iterator end_;
+        stored_iterators_tuple begin_;
+        stored_iterators_tuple end_;
     };
 
     template<typename... Types>
