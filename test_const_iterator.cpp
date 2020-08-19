@@ -13,6 +13,9 @@ using namespace std;
 using namespace zipcpp;
 using namespace zip_impl;
 
+template<typename T>
+inline constexpr bool is_const_ref = is_const_v<remove_reference_t<T>>;
+
 TEST(ConstIterator, Constructable) {
     vector<int> a = {10, 20};
     const int b[4] = {1, 2, 3, 4};
@@ -24,8 +27,6 @@ TEST(ConstIterator, DefaultConstructable) {
     auto it = ConstZipIterator<>();
 }
 
-/*
- * TODO: activate test after upgrading class Zip.
 TEST(ConstIterator, NestedZipConstructable) {
     vector<int> a = {10};
     vector<int> b = {10};
@@ -36,34 +37,42 @@ TEST(ConstIterator, NestedZipConstructable) {
 
     for (const auto& [tup1, tup2] : zip(z1, z2)) {
         ASSERT_EQ(get<0>(tup1), 10);
+        static_assert(is_const_ref<decltype(get<0>(tup1))>);
         ASSERT_EQ(get<1>(tup1), 10);
+        static_assert(is_const_ref<decltype(get<1>(tup1))>);
         ASSERT_EQ(get<0>(tup2), 10);
+        static_assert(is_const_ref<decltype(get<0>(tup2))>);
         ASSERT_EQ(get<1>(tup2), 10);
+        static_assert(is_const_ref<decltype(get<1>(tup2))>);
     }
 }
 
 
 TEST(ConstIterator, NestedZipConstructableWithNonConst) {
     vector<int> a = {10};
-    vector<int> b = {10};
+    const vector<int> b = {10};
     vector<int> c = {10};
-    vector<int> d = {10};
+    const vector<int> d = {10};
+    // Mixed constant and non-constant containers: only elements of a should be assignable.
     auto z1 = zip(a, b);
     const auto z2 = zip(c, d);
 
     for (const auto& [tup1, tup2] : zip(z1, z2)) {
         ASSERT_EQ(get<0>(tup1), 10);
+        static_assert(! is_const_ref<decltype(get<0>(tup1))>);
         ASSERT_EQ(get<1>(tup1), 10);
+        static_assert(is_const_ref<decltype(get<1>(tup1))>);
         ASSERT_EQ(get<0>(tup2), 10);
+        static_assert(is_const_ref<decltype(get<0>(tup2))>);
         ASSERT_EQ(get<1>(tup2), 10);
+        static_assert(is_const_ref<decltype(get<1>(tup2))>);
     }
 }
- */
 
 TEST(ConstIterator, VectorIncrement) {
     vector<int> a = {10, 20};
     const vector<int> b = {30, 40, 50};
-    auto it = ZipIterator<vector<int>::iterator, vector<int>::const_iterator>(a.begin(), b.begin() + 1);
+    auto it = ConstZipIterator<vector<int>::iterator, vector<int>::const_iterator>(a.begin(), b.begin() + 1);
     ++it;
     ASSERT_EQ(it.AsTuple(), make_tuple(a.begin() + 1, b.begin() + 2));
 }
@@ -107,13 +116,13 @@ TEST(ConstIterator, EqualOperatorAfterIncrement) {
         ZI second(a.begin(), s.begin(), c.begin());
         for (size_t second_increments = 0; second_increments < 2; ++second_increments, ++second) {
             if (first_increments == second_increments)
-                ASSERT_EQ(first, second) << "ZipIterators should be equal after " << first_increments << " increments";
+                ASSERT_EQ(first, second) << "ConstZipIterators should be equal after " << first_increments << " increments";
             else
-                ASSERT_NE(first, second) << "ZipIterators should not be equal after" << first_increments << " and " << second_increments << " increments";
+                ASSERT_NE(first, second) << "ConstZipIterators should not be equal after" << first_increments << " and " << second_increments << " increments";
         }
-        EXPECT_NE(first, last) << "ZipIterator should not reach end after " << first_increments << " increments";
+        EXPECT_NE(first, last) << "ConstZipIterator should not reach end after " << first_increments << " increments";
     }
-    EXPECT_EQ(first, last) << "ZipIterator should reach end after 2 increments";
+    EXPECT_EQ(first, last) << "ConstZipIterator should reach end after 2 increments";
 }
 
 TEST(ConstIterator, EqualOperatorForEmptyZip) {
@@ -129,7 +138,7 @@ TEST(ConstIterator, ReferenceReadValue) {
 
     {
         ZI z1(a.begin(), s.begin(), c.begin());
-        // These assertions are different from the same in the test_iterator.cpp file.
+        // These assertions are different from the same in the test_iterator.cpp file (all references are const).
         static_assert(is_same_v<decltype(get<0>(*z1)), const int&>);
         static_assert(is_same_v<decltype(get<1>(*z1)), const char&>);
         static_assert(is_same_v<decltype(get<2>(*z1)), const bool&>);
@@ -166,8 +175,11 @@ TEST(ConstIterator, ReferenceReadAfterIncrement) {
         ++z1;
         auto[av, sv, cv] = *z1;
         ASSERT_EQ(av, 20);
+        static_assert(is_const_ref<decltype(av)>);
         ASSERT_EQ(sv, 'b');
+        static_assert(is_const_ref<decltype(sv)>);
         ASSERT_EQ(cv, true);
+        static_assert(is_const_ref<decltype(cv)>);
     }
 }
 
@@ -205,12 +217,10 @@ TEST(IteratorCategories, CheckMemberTypesConst) {
     ASSERT_TRUE(true);
 }
 
-/*
- * TODO: activate tests after upgrading class Zip.
-TEST(IteratorCategories, BidirectionalDecrement) {
+TEST(ConstIteratorCategories, BidirectionalDecrement) {
     std::set<int> a = {10, 40, 20};
     std::set<int> b = {1, 2, 4};
-    auto z = zip(a, b);
+    const auto z = zip(a, b);
     auto it1 = z.begin();
     ++it1;
     EXPECT_EQ(*it1, make_tuple(20, 2));
@@ -219,12 +229,12 @@ TEST(IteratorCategories, BidirectionalDecrement) {
     ASSERT_EQ(*it1, *z.begin());
 }
 
-TEST(IteratorCategories, Arithmetics) {
+TEST(ConstIteratorCategories, Arithmetics) {
     vector<int> a(10);
     iota(a.begin(), a.end(), 0);
     EXPECT_EQ(a.back(), 9);
 
-    auto z = zip(a);
+    const auto z = zip(a);
 
     for (int i = 0; i < 10; ++i) {
         auto it1 = begin(z);
@@ -246,9 +256,9 @@ TEST(IteratorCategories, Arithmetics) {
     }
 }
 
-TEST(IteratorCategories, Differences) {
+TEST(ConstIteratorCategories, Differences) {
     vector<int> a(10);
-    auto z = zip(a);
+    const auto z = zip(a);
     for (int i = 0; i < 10; ++i) {
         auto it1 = z.begin() + i;
         for (int j = 0; j < 10; ++j) {
@@ -258,9 +268,9 @@ TEST(IteratorCategories, Differences) {
     }
 }
 
-TEST(IteratorCategories, Comparisons) {
+TEST(ConstIteratorCategories, Comparisons) {
     vector<int> a(10);
-    auto z = zip(a);
+    const auto z = zip(a);
     for (int i = 0; i < 10; ++i) {
         auto it1 = z.begin() + i;
         for (int j = 0; j < 10; ++j) {
@@ -273,10 +283,10 @@ TEST(IteratorCategories, Comparisons) {
     }
 }
 
-TEST(IteratorCategories, OperatosSquareBrackets) {
+TEST(ConstIteratorCategories, OperatosSquareBrackets) {
     vector<int> a(10);
     iota(a.begin(), a.end(), 0);
-    auto z = zip(a);
+    const auto z = zip(a);
     for (int i = 0; i < 10; ++i) {
         auto it1 = z.begin() + i;
         for (int j = 0; j < 10 - i; ++j) {
@@ -285,4 +295,3 @@ TEST(IteratorCategories, OperatosSquareBrackets) {
         }
     }
 }
-*/
