@@ -8,7 +8,7 @@ set(ZIP_SOURCES
 )
 
 set(TEST_SOURCES
-    main.cpp test_iterator.cpp test_const_iterator.cpp test_zip.cpp test_iteration.cpp
+    main.cpp tests/iterator.cpp tests/const_iterator.cpp tests/zip.cpp tests/iteration.cpp
 )
 
 add_library(zip ${ZIP_SOURCES})
@@ -19,6 +19,6 @@ add_executable(test ${TEST_SOURCES})
 target_link_libraries(test zip gtest gtest_main)
 
 target_include_directories(test PRIVATE
-        "extern/googletest/googletest/include")
+        "extern/googletest/googletest/include" "${PROJECT_SOURCE_DIR}")
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest" "extern/googletest")
