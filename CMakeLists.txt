@@ -7,9 +7,8 @@ set(ZIP_SOURCES
     zip.h
 )
 
-set(TEST_SOURCES
-    main.cpp tests/iterator.cpp tests/const_iterator.cpp tests/zip.cpp tests/iteration.cpp
-)
+file(GLOB TEST_SOURCES tests/*.cpp)
+set(TEST_SOURCES ${TEST_SOURCES} main.cpp)
 
 add_library(zip ${ZIP_SOURCES})
 set_target_properties(zip PROPERTIES LINKER_LANGUAGE CXX)
